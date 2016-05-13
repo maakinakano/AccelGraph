@@ -19,7 +19,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     private GraphView xView, yView, zView;
 
     private SensorManager sensorMgr;
-    private Sensor accelerometer;
+    private Sensor gravitymeter;
 
     private final static long GRAPH_REFRESH_WAIT_MS = 20;
 
@@ -30,6 +30,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     private float rate;
     private int accuracy;
     private long prevts;
+    private final static float alpha = 0.7F;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,8 +45,8 @@ public class MainActivity extends Activity implements SensorEventListener {
         zView = (GraphView) findViewById(R.id.z_view);
 
         sensorMgr = (SensorManager) getSystemService(SENSOR_SERVICE);
-        accelerometer = sensorMgr.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        if (accelerometer == null) {
+        gravitymeter = sensorMgr.getDefaultSensor(Sensor.TYPE_GRAVITY);
+        if (gravitymeter == null) {
             Toast.makeText(this, getString(R.string.toast_no_accel_error),
                     Toast.LENGTH_SHORT).show();
             finish();
@@ -59,7 +60,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     protected void onResume() {
         super.onResume();
         Log.i(TAG, "onResume");
-        sensorMgr.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_FASTEST);
+        sensorMgr.registerListener(this, gravitymeter, SensorManager.SENSOR_DELAY_FASTEST);
         th = new GraphRefreshThread();
         th.start();
     }
@@ -74,9 +75,9 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        vx = event.values[0];
-        vy = event.values[1];
-        vz = event.values[2];
+        vx = alpha*vx + (1-alpha)*event.values[0];
+        vy = alpha*vy + (1-alpha)*event.values[1];
+        vz = alpha*vz + (1-alpha)*event.values[2];
         rate = ((float) (event.timestamp - prevts)) / (1000 * 1000);
         prevts = event.timestamp;
     }
